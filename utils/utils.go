@@ -36,3 +36,17 @@ func AddHandler[Req any, Res any](n *maelstrom.Node, msg_type string, handler fu
 		return n.Reply(msg, res_json)
 	})
 }
+
+func AddAsyncHandler[Req any](n *maelstrom.Node, msg_type string, handler func(Req) error) {
+	n.Handle(msg_type, func(msg maelstrom.Message) error {
+		var req Req
+		if err := json.Unmarshal(msg.Body, &req); err != nil {
+			return err
+		}
+
+		if err := handler(req); err != nil {
+			return err
+		}
+		return nil
+	})
+}
