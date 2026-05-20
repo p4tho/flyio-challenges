@@ -51,11 +51,11 @@ func main() {
 
 func (serv *Monitor) broadcast_handler(req Broadcast) (BroadcastOk, error) {
 	for _, id := range serv.node.NodeIDs() {
-		gossip_req := map[string]any{}
-		gossip_req["type"] = "gossip"
-		gossip_req["message"] = req.Message
-
-		err := serv.node.Send(id, gossip_req)
+		req := Gossip {
+			Message: req.Message,
+		}
+		
+		err := utils.SendAsync(serv.node, "gossip", id, req)
 		if err != nil {
 			return BroadcastOk{}, err
 		}

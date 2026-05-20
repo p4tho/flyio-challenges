@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
 
 	maelstrom "github.com/jepsen-io/maelstrom/demo/go"
@@ -49,4 +50,24 @@ func AddAsyncHandler[Req any](n *maelstrom.Node, msg_type string, handler func(R
 		}
 		return nil
 	})
+}
+
+func SendAsync[Req any](n *maelstrom.Node, msg_type string, dest string, req Req) error {
+	req_json_raw, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+	
+	var req_json map[string]any
+	err = json.Unmarshal(req_json_raw, &req_json)
+	if err != nil {
+		return err
+	}
+	
+	req_json["type"] = msg_type
+
+	if err := n.Send(dest, req_json); err != nil {
+		return err
+	}
+	return nil
 }
