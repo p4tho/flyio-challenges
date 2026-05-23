@@ -52,6 +52,34 @@ func AddAsyncHandler[Req any](n *maelstrom.Node, msg_type string, handler func(R
 	})
 }
 
+// Retry sends until success
+func Send[Req any, Res any](n *maelstrom.Node, msg_type string, dest string, req Req) (Res, error) {
+	req_json_raw, err := json.Marshal(req)
+	if err != nil {
+		return *new(Res), err
+	}
+	
+	var req_json map[string]any
+	err = json.Unmarshal(req_json_raw, &req_json)
+	if err != nil {
+		return *new(Res), err
+	}
+	
+	req_json["type"] = msg_type
+
+	msg, err := n.SyncRPC(context.Background(), dest, req_json)
+	// Didn't receive a reply
+	for err != nil {
+		msg, err = n.SyncRPC(context.Background(), dest, req)
+	}
+
+	var res Res
+	if err := json.Unmarshal(msg.Body, &res); err != nil {
+		return *new(Res), err
+	}
+	return res, nil
+}
+
 func SendAsync[Req any](n *maelstrom.Node, msg_type string, dest string, req Req) error {
 	req_json_raw, err := json.Marshal(req)
 	if err != nil {
